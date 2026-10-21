@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400">
+  <!-- Group with stroke. Changing stroke-width in SVG-Edit corrupts
+       the compound transforms on the child elements. -->
+  <g id="fan" stroke="black" stroke-width="2" fill="none">
+    <!-- Each rect uses translate + rotate: a compound transform.
+         The bug causes the translate to leak into the rotation center
+         recalculation, destroying the layout. -->
+    <rect width="80" height="20" rx="4" fill="#e74c3c" transform="translate(200, 200) rotate(0)"/>
+    <rect width="80" height="20" rx="4" fill="#e67e22" transform="translate(200, 200) rotate(30)"/>
+    <rect width="80" height="20" rx="4" fill="#f1c40f" transform="translate(200, 200) rotate(60)"/>
+    <rect width="80" height="20" rx="4" fill="#2ecc71" transform="translate(200, 200) rotate(90)"/>
+    <rect width="80" height="20" rx="4" fill="#3498db" transform="translate(200, 200) rotate(120)"/>
+    <rect width="80" height="20" rx="4" fill="#9b59b6" transform="translate(200, 200) rotate(150)"/>
+  </g>
+</svg>

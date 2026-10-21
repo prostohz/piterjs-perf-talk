@@ -1,0 +1,19 @@
+{
+  "name": "svgedit-harness",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "playwright": "1.61.1"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.5",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3"
+  },
+  "engines": {
+    "node": ">=26"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": { "lib": ["ES2023", "DOM"], "resolveJsonModule": true },
+  "include": ["target.ts", "harness/**/*.ts"],
+  "exclude": ["library", "harness/node_modules"]
+}
