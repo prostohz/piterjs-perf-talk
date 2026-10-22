@@ -1,7 +1,7 @@
 import type { Config } from "../config.js";
 import type { Target } from "../target.js";
 import type { Budget } from "../runtime/budget.js";
-import { addMeasurement } from "./metrics.js";
+import { measureScenarios } from "./measure.js";
 import { testLibrary, withPreparedSnapshot } from "./prepare.js";
 import type { AttemptContext, RunHistory } from "./report.js";
 
@@ -17,7 +17,7 @@ export async function evaluate(
   attempt: AttemptContext,
   context: EvaluationContext,
 ): Promise<void> {
-  const { budget, history, target, config } = context;
+  const { budget, history } = context;
   budget.check();
   await history.stage(attempt, "prepare");
 
@@ -29,14 +29,6 @@ export async function evaluate(
 
     budget.check();
     await history.stage(attempt, "measure");
-    for (const scenario of target.scenarios) {
-      for (let repeat = 0; repeat < config.measurements.repeats; repeat++) {
-        const values = await budget.within(() =>
-          session.measure(scenario, config.targetMetric),
-        );
-        addMeasurement(attempt.record.measurements, scenario, values, config);
-        await history.save();
-      }
-    }
+    await measureScenarios(session, attempt, context);
   });
 }

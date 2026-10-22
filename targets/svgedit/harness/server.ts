@@ -17,6 +17,8 @@ export const contentTypes: Record<string, string> = {
 
 export async function serve(root: string) {
   const server = createServer(async (request, response) => {
+    response.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+    response.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
     try {
       const pathname = decodeURIComponent(
         new URL(request.url ?? "/", "http://localhost").pathname,

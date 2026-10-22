@@ -13,13 +13,17 @@ export interface Target {
   prepare(libraryPath: string): Promise<TargetSession>;
 }
 
-export interface TargetSession {
-  test(): Promise<void>;
+export interface MeasurementWorker {
   measure(
     scenario: string,
     targetMetric: Metric,
   ): Promise<Record<string, number>>;
   close(): Promise<void>;
+}
+
+export interface TargetSession extends MeasurementWorker {
+  test(): Promise<void>;
+  createWorker?(): Promise<MeasurementWorker>;
 }
 
 function object(value: unknown): Record<string, unknown> {
@@ -46,11 +50,24 @@ export function validateTarget(value: unknown): Target {
 }
 
 export function validateSession(value: unknown): TargetSession {
+  validateMeasurementWorker(value);
   const session = object(value);
-  for (const name of ["test", "measure", "close"])
-    if (typeof session[name] !== "function")
-      throw new Error(`Target session must define ${name}`);
+  if (typeof session.test !== "function")
+    throw new Error("Target session must define test");
+  if (
+    session.createWorker !== undefined &&
+    typeof session.createWorker !== "function"
+  )
+    throw new Error("Target session createWorker must be a function");
   return value as TargetSession;
+}
+
+export function validateMeasurementWorker(value: unknown): MeasurementWorker {
+  const worker = object(value);
+  for (const name of ["measure", "close"])
+    if (typeof worker[name] !== "function")
+      throw new Error(`Measurement worker must define ${name}`);
+  return value as MeasurementWorker;
 }
 
 export async function libraryProvenance(

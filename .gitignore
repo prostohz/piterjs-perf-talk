@@ -17,6 +17,7 @@ presentation/build/*
 !presentation/build/theme.css
 !presentation/build/github-qr.svg
 !presentation/build/portrait.png
+!presentation/build/portrait-vector.svg
 !presentation/build/fonts/
 presentation/build/fonts/*
 !presentation/build/fonts/LICENSE_LIBERATION

@@ -72,7 +72,15 @@ export function App() {
       target: selected.target,
       run: selected.id,
     });
-    history.replaceState(null, "", `?${query}`);
+    const url = new URL(location.href);
+    if (
+      url.searchParams.get("target") !== selected.target ||
+      url.searchParams.get("run") !== selected.id
+    )
+      url.searchParams.delete("attempt");
+    url.searchParams.set("target", selected.target);
+    url.searchParams.set("run", selected.id);
+    history.replaceState(null, "", url);
     setDetailBusy(true);
     void fetchJson<RunDetail>(`/api/run?${query}`, controller.signal)
       .then((detail) => {

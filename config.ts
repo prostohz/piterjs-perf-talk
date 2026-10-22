@@ -7,7 +7,7 @@ export default {
     reasoningEffort: "medium",
   },
   targetMetric: "operationTimeMs",
-  measurements: { repeats: 30 },
-  budgets: { maxDurationMinutes: 240, maxIterations: 40 },
+  measurements: { repeats: 100, workers: 5 },
+  budgets: { maxDurationMinutes: 240, maxIterations: 10 },
   minImprovementPercent: 1,
 } satisfies Config;

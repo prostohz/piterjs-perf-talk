@@ -191,6 +191,18 @@ export class RunHistory {
     await this.save();
   }
 
+  async measurementEvent(
+    attempt: AttemptContext,
+    worker: number,
+    scenario: string,
+    state: "start" | "done",
+  ): Promise<void> {
+    await appendFile(
+      this.eventsPath,
+      `${JSON.stringify({ time: new Date().toISOString(), attempt: attempt.record.id, stage: "measure", worker, scenario, state })}\n`,
+    );
+  }
+
   async finish(): Promise<void> {
     this.report.status = "completed";
     this.report.stopReason = "Iteration limit reached";

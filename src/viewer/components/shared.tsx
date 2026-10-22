@@ -9,6 +9,16 @@ import { cn } from "../lib/utils.js";
 
 export const formatNumber = (value: number) =>
   value.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
+export const measurementUnit = (metric: Metric) =>
+  metric === "operationTimeMs" || metric === "reactRenderTimeMs"
+    ? "мкс"
+    : metric === "rafFps"
+      ? "FPS"
+      : "шт.";
+export const formatMeasurement = (value: number, metric: Metric) =>
+  metric === "operationTimeMs" || metric === "reactRenderTimeMs"
+    ? (value * 1000).toLocaleString("ru-RU", { maximumFractionDigits: 0 })
+    : formatNumber(value);
 export const formatDate = (value: string) =>
   new Date(value).toLocaleString("ru-RU", {
     dateStyle: "short",
@@ -82,7 +92,7 @@ export function Measured({
   if (!stats) return <>—</>;
   return (
     <>
-      {formatNumber(stats.median)}
+      {formatMeasurement(stats.median, report.config.targetMetric)}
       {!complete(stats, report) && (
         <small>
           {" "}

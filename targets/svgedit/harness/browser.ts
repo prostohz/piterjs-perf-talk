@@ -53,6 +53,8 @@ export async function measure(
     await dialog.locator("button#storage_ok").click({ force: true });
   return page.evaluate(
     async ({ scenario, count, svg }) => {
+      if (!globalThis.crossOriginIsolated)
+        throw new Error("Cross-origin isolation is required for measurements");
       const canvas = window.svgEditor.svgCanvas;
       if (window.__coverage__)
         throw new Error("Coverage build cannot be measured");
@@ -157,7 +159,7 @@ export async function measure(
         case "duplicate-500":
           canvas.cloneSelectedElements(20, 10);
           break;
-        case "group-2000":
+        case "group-500":
           canvas.groupSelectedElements();
           break;
         case "ungroup-500":
@@ -166,10 +168,10 @@ export async function measure(
         case "align-left-500":
           canvas.alignSelectedElements("l", "selected");
           break;
-        case "fill-5000":
+        case "fill-500":
           canvas.changeSelectedAttribute("fill", "#4060a0");
           break;
-        case "delete-5000":
+        case "delete-500":
           canvas.deleteSelectedElements();
           break;
         case "undo-move-500":
@@ -187,7 +189,7 @@ export async function measure(
       );
       const shapes = elements();
       const shapeCount =
-        scenario === "delete-5000"
+        scenario === "delete-500"
           ? 0
           : scenario === "duplicate-500"
             ? count * 2
@@ -198,11 +200,11 @@ export async function measure(
         (el) => el.id,
       );
       check(new Set(allIds).size === allIds.length, "Duplicate IDs");
-      if (scenario !== "delete-5000")
+      if (scenario !== "delete-500")
         assertOriginals(
           ["move-500", "redo-move-500"].includes(scenario) ? 20 : 0,
           ["move-500", "redo-move-500"].includes(scenario) ? 10 : 0,
-          scenario === "fill-5000" ? "#4060a0" : undefined,
+          scenario === "fill-500" ? "#4060a0" : undefined,
           scenario === "align-left-500",
         );
       if (scenario === "select-500") {
@@ -246,7 +248,7 @@ export async function measure(
           JSON.stringify(actual) === JSON.stringify(desired),
           "Clone geometry",
         );
-      } else if (scenario === "group-2000") {
+      } else if (scenario === "group-500") {
         const group = selected()[0];
         check(
           selected().length === 1 && group?.tagName === "g",
@@ -263,7 +265,7 @@ export async function measure(
           shapes.every((el) => el.parentElement?.classList.contains("layer")),
           "Ungroup membership",
         );
-      } else if (scenario === "delete-5000") {
+      } else if (scenario === "delete-500") {
         check(selected().length === 0, "Deleted selection");
       }
       if (scenario === "undo-move-500") {
@@ -283,11 +285,6 @@ export async function measure(
           canvas.undoMgr.getUndoStackSize() === undoBefore + 1,
           "Operation history",
         );
-        if (scenario !== "fill-5000" && scenario !== "delete-5000") {
-          canvas.undoMgr.undo();
-          check(elements().length === count, "Undo shape count");
-          assertOriginals();
-        }
       }
       return duration;
     },

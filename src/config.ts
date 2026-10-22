@@ -6,7 +6,7 @@ import { resolve } from "node:path";
 export interface Config {
   agent: AgentSettings;
   targetMetric: Metric;
-  measurements: { repeats: number };
+  measurements: { repeats: number; workers?: number };
   budgets: { maxDurationMinutes: number; maxIterations: number };
   minImprovementPercent: number;
 }
@@ -46,6 +46,8 @@ export function validateConfig(value: unknown): Config {
   )
     throw new Error("Unknown targetMetric");
   number(object(config.measurements).repeats, 1, true);
+  const workers = object(config.measurements).workers;
+  if (workers !== undefined) number(workers, 1, true);
   number(object(config.budgets).maxDurationMinutes, Number.MIN_VALUE);
   number(object(config.budgets).maxIterations, 0, true);
   number(config.minImprovementPercent, Number.MIN_VALUE);

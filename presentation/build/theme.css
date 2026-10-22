@@ -344,18 +344,15 @@ img {
 .scenarios-slide td:first-child {
   font-weight: 700;
 }
-.dayjs-reasons li,
 .optimization-problems li,
 .limitations li {
   padding-bottom: var(--space-3);
   border-bottom: 1px solid var(--rule);
 }
-.dayjs-reasons li + li,
 .optimization-problems li + li,
 .limitations li + li {
   margin-top: var(--space-3);
 }
-.dayjs-reasons li:last-child,
 .optimization-problems li:last-child,
 .limitations li:last-child {
   border-bottom: 0;
@@ -574,6 +571,34 @@ img {
   margin-top: var(--space-4);
 }
 
-.library-description {
-  margin-bottom: var(--space-2);
+.editor-screenshot {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+}
+.editor-screenshot img {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: contain;
+}
+.measurement-slide .row {
+  grid-template-columns: 320px minmax(0, 1fr);
+  padding-bottom: var(--space-2);
+}
+.measurement-slide .rows {
+  gap: var(--space-2);
+}
+.code-slide pre {
+  line-height: 1.4;
+}
+.chart-slide .run-metrics {
+  gap: var(--space-8);
+  padding-top: var(--space-4);
+}
+
+.selection-frame-illustration {
+  margin-top: var(--space-4);
 }

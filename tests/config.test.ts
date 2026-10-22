@@ -33,3 +33,20 @@ it("rejects invalid configuration when loading config.ts", async () => {
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+it.each([0, -1, 1.5, NaN, Infinity])(
+  "rejects invalid measurement worker count %s",
+  (workers) => {
+    expect(() =>
+      validateConfig(settings({ measurements: { repeats: 100, workers } })),
+    ).toThrow();
+  },
+);
+
+it("accepts parallel measurement settings and legacy sequential settings", () => {
+  expect(
+    validateConfig(settings({ measurements: { repeats: 100, workers: 5 } }))
+      .measurements.workers,
+  ).toBe(5);
+  expect(validateConfig(settings()).measurements.workers).toBeUndefined();
+});

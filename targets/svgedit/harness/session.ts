@@ -19,6 +19,11 @@ export async function createSession(library: string): Promise<TargetSession> {
   let closed = false;
   let productionReady = true;
   return {
+    async createWorker() {
+      if (closed || !productionReady)
+        throw new Error("Production session is not ready");
+      return createSession(library);
+    },
     async test() {
       if (closed) throw new Error("Session is closed");
       productionReady = false;

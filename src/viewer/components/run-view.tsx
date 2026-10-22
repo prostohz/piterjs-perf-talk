@@ -15,6 +15,7 @@ import {
   Disclosure,
   formatDate,
   formatNumber,
+  measurementUnit,
   Measured,
   RawText,
   StatusBadge,
@@ -33,13 +34,23 @@ export function RunView({
   const report = detail.report;
   const names = scenarios(report);
   const [chosenAttempt, setAttempt] = useState(
-    report.best ?? report.attempts[0]?.id ?? "",
+    () =>
+      new URLSearchParams(location.search).get("attempt") ??
+      report.best ??
+      report.attempts[0]?.id ??
+      "",
   );
   const attempt =
     report.attempts.find((a) => a.id === chosenAttempt) ??
     report.attempts.find((a) => a.id === report.best) ??
     report.attempts[0];
   const attemptsList = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const url = new URL(location.href);
+    if (attempt) url.searchParams.set("attempt", attempt.id);
+    else url.searchParams.delete("attempt");
+    history.replaceState(null, "", url);
+  }, [attempt?.id]);
   useEffect(() => {
     const list = attemptsList.current;
     const selected = list?.querySelector<HTMLElement>('[aria-pressed="true"]');
@@ -113,7 +124,12 @@ export function RunView({
         <div id="overview" className="mt-4">
           <DataTable>
             <ColumnHeadings
-              columns={["Сценарий", "Baseline", "Итог", "Улучшение"]}
+              columns={[
+                "Сценарий",
+                `Baseline, ${measurementUnit(metric)}`,
+                `Итог, ${measurementUnit(metric)}`,
+                "Улучшение",
+              ]}
             />
             <TableBody>
               {names.map((name) => (

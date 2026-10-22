@@ -8,7 +8,9 @@ import {
   DataTable,
   Delta,
   Disclosure,
+  formatMeasurement,
   formatNumber,
+  measurementUnit,
   Measured,
   RawText,
   StatusBadge,
@@ -77,7 +79,12 @@ export function AttemptDetail({
       {a.parent !== null && <CodeDiff run={run} attempt={a} />}
       <DataTable>
         <ColumnHeadings
-          columns={["Сценарий", "Ориентир", "Попытка", "Улучшение"]}
+          columns={[
+            "Сценарий",
+            `Ориентир, ${measurementUnit(metric)}`,
+            `Попытка, ${measurementUnit(metric)}`,
+            "Улучшение",
+          ]}
         />
         <TableBody>
           {names.map((name) => (
@@ -113,7 +120,13 @@ export function AttemptDetail({
         <Disclosure title="Все замеры, p95 и разброс">
           <DataTable className="min-w-[44rem] [&_th:first-child]:w-[26%] [&_th:nth-child(2)]:w-[12%] [&_th:nth-child(3)]:w-[20%] [&_th:nth-child(4)]:w-[12%]">
             <ColumnHeadings
-              columns={["Сценарий", "p95", "min … max", "Разброс", "Серия"]}
+              columns={[
+                "Сценарий",
+                `p95, ${measurementUnit(metric)}`,
+                `min … max, ${measurementUnit(metric)}`,
+                `Разброс, ${measurementUnit(metric)}`,
+                `Серия, ${measurementUnit(metric)}`,
+              ]}
             />
             <TableBody>
               {names.map((name) => {
@@ -124,13 +137,20 @@ export function AttemptDetail({
                     <TableHead scope="row" className="text-left">
                       {name}
                     </TableHead>
-                    <TableCell>{formatNumber(stats.p95)}</TableCell>
                     <TableCell>
-                      {formatNumber(stats.min)} … {formatNumber(stats.max)}
+                      {formatMeasurement(stats.p95, metric)}
                     </TableCell>
-                    <TableCell>{formatNumber(stats.spread)}</TableCell>
+                    <TableCell>
+                      {formatMeasurement(stats.min, metric)} …{" "}
+                      {formatMeasurement(stats.max, metric)}
+                    </TableCell>
+                    <TableCell>
+                      {formatMeasurement(stats.spread, metric)}
+                    </TableCell>
                     <TableCell className="whitespace-normal wrap-anywhere">
-                      {stats.samples.map(formatNumber).join("; ")}
+                      {stats.samples
+                        .map((value) => formatMeasurement(value, metric))
+                        .join("; ")}
                     </TableCell>
                   </TableRow>
                 );
