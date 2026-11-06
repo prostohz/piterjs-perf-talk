@@ -1,26 +1,26 @@
-# Сценарии SVGEdit
+# SVGEdit scenarios
 
-Фиксированные документы: чередующиеся прямоугольники и круги размером 12×12, сетка из 40 столбцов с шагом 20, две заливки. ID, координаты и размеры детерминированы; генератор — `fixtures.ts`.
+The fixtures alternate 12×12 rectangles and circles with two fill colors on a 40-column grid with 20-unit spacing. The generator in `fixtures.ts` uses deterministic IDs, coordinates, and dimensions.
 
-Все команды выполняются в настоящем редакторе. Измеряется только синхронный вызов API и его обработчики; подготовка и проверки вне интервала.
+All commands run in the actual editor. Timing covers only the synchronous API call and its handlers. Setup and validation happen outside the measured interval.
 
-Время сохраняется в миллисекундах через `performance.now()`. Сервер включает cross-origin isolation заголовками COOP `same-origin` и COEP `require-corp`, чтобы Chromium использовал разрешение таймера 5 мкс. Перед измерением проверяется `crossOriginIsolated`.
+The harness records elapsed time in milliseconds using `performance.now()`. The server enables cross-origin isolation with COOP `same-origin` and COEP `require-corp` so Chromium uses 5 µs timer resolution. The harness checks `crossOriginIsolated` before measuring.
 
-| Сценарий         | Начальное состояние             | Измеряемая команда                     | Проверка результата                                           |
-| ---------------- | ------------------------------- | -------------------------------------- | ------------------------------------------------------------- |
-| `select-500`     | 500 фигур без выделения         | Выделить слой                          | 500 правильных ID, геометрия и история не изменились          |
-| `move-500`       | 500 выделенных фигур            | Сдвинуть на (20, 10)                   | Каждая координата, размеры, заливка, запись в истории          |
-| `duplicate-500`  | 500 выделенных фигур            | Дублировать со сдвигом (20, 10)        | 1000 фигур, уникальные ID, геометрия и заливка копий, история |
-| `group-500`      | 500 выделенных фигур            | Сгруппировать                          | Одна выделенная группа, все фигуры внутри, геометрия, история |
-| `ungroup-500`    | Группа из 500 фигур выделена    | Разгруппировать                        | 500 выделенных фигур непосредственно в слое, геометрия, история |
-| `align-left-500` | 500 выделенных фигур            | Выровнять слева относительно выделения | Все x = 20, прежние y и размеры, запись в истории             |
-| `fill-500`       | 500 выделенных фигур            | Установить fill = `#4060a0`            | Заливка каждой фигуры, неизменная геометрия, запись в истории |
-| `delete-500`     | 500 выделенных фигур            | Удалить                                | Нет фигур и выделения, запись в истории                       |
-| `undo-move-500`  | 500 фигур после сдвига (20, 10) | Undo                                   | Исходные координаты и свойства, размеры стеков истории        |
-| `redo-move-500`  | Сдвиг 500 фигур отменён         | Redo                                   | Сдвинутые координаты, свойства и стеки истории                |
+| Scenario         | Initial state                          | Measured command                     | Result checks                                                                     |
+| ---------------- | -------------------------------------- | ------------------------------------ | --------------------------------------------------------------------------------- |
+| `select-500`     | 500 shapes, none selected              | Select the layer                     | All 500 expected IDs; unchanged geometry and history                              |
+| `move-500`       | 500 selected shapes                    | Move by (20, 10)                     | Each shape's coordinates, dimensions, and fill; history entry                     |
+| `duplicate-500`  | 500 selected shapes                    | Duplicate with an offset of (20, 10) | 1,000 shapes; unique IDs; copies' geometry and fill; history                      |
+| `group-500`      | 500 selected shapes                    | Group the selection                  | One selected group containing all shapes; geometry and history                    |
+| `ungroup-500`    | One selected group of 500 shapes       | Ungroup the selection                | 500 selected shapes directly in the layer; geometry and history                   |
+| `align-left-500` | 500 selected shapes                    | Align left relative to the selection | All x coordinates equal 20; unchanged y coordinates and dimensions; history entry |
+| `fill-500`       | 500 selected shapes                    | Set the fill to `#4060a0`            | Each shape's fill; unchanged geometry; history entry                              |
+| `delete-500`     | 500 selected shapes                    | Delete the selection                 | No shapes or selection; history entry                                             |
+| `undo-move-500`  | 500 shapes moved by (20, 10)           | Undo                                 | Original coordinates and properties; history stack sizes                          |
+| `redo-move-500`  | The move of 500 shapes has been undone | Redo                                 | Updated coordinates, properties, and history stacks                               |
 
-Во всех сценариях проверяются количество фигур, уникальность ID, исходная геометрия и заливка. Для изменяющих документ команд проверяется изменение истории. Проверки не полагаются на время операции: пустая команда не считается ускорением.
+Every scenario checks the shape count, ID uniqueness, geometry, and fill. Commands that change the document also check for a history change. These checks are independent of timing, so a no-op cannot count as a speedup.
 
-После проверки результата команда дополнительно не отменяется. Каждый повтор начинается в новом контексте браузера; обратимость операций проверяют тесты библиотеки. В сценариях `undo-move-500` и `redo-move-500` отмена и повтор остаются измеряемыми командами, а их подготовка и проверки результата сохранены.
+The harness does not undo a command after validating its result. Each repetition starts in a fresh browser context, and the library tests verify that operations can be undone. In `undo-move-500` and `redo-move-500`, undo and redo are themselves the measured commands, with their own setup and result checks.
 
-Во всех сценариях исходный документ содержит 500 фигур. Пайплайн усредняет нормализованные медианы всех десяти сценариев одинаково.
+Every scenario starts with a document containing 500 shapes. The pipeline gives all ten scenarios equal weight when averaging their normalized medians.

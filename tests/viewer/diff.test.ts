@@ -147,7 +147,7 @@ it("returns an empty final diff when baseline remains best and rejects absent re
   f.report.best = null;
   await f.save();
   await expect(readRunDiff(f.root, "one", "run")).rejects.toThrow(
-    "Принятой версии пока нет",
+    "No accepted snapshot yet",
   );
 });
 
@@ -173,7 +173,7 @@ it("rejects missing snapshots and waits for a running attempt to finish", async 
   const f = await fixture();
   f.report.attempts[2]!.status = "running";
   await f.save();
-  await expect(f.read()).rejects.toThrow("после завершения");
+  await expect(f.read()).rejects.toThrow("once the iteration ends");
   f.report.attempts[2]!.status = "interrupted";
   await f.save();
   expect((await f.read()).patch).toBe("");
@@ -183,10 +183,10 @@ it("rejects missing snapshots and waits for a running attempt to finish", async 
 
 it("rejects traversal, snapshot symlinks and symlinks inside source trees", async () => {
   const f = await fixture();
-  await expect(f.read("../../outside")).rejects.toThrow("не найдена");
+  await expect(f.read("../../outside")).rejects.toThrow("Attempt not found");
   await expect(
     readAttemptDiff(f.root, "..", "run", "baseline"),
-  ).rejects.toThrow("путь");
+  ).rejects.toThrow("Invalid path");
   await symlink(
     join(f.directory, "report.json"),
     join(f.library("iteration-002"), "src/link"),
@@ -194,5 +194,5 @@ it("rejects traversal, snapshot symlinks and symlinks inside source trees", asyn
   await expect(f.read()).rejects.toThrow("Symlinks");
   await rm(f.library("iteration-002"), { recursive: true });
   await symlink(f.root, f.library("iteration-002"));
-  await expect(f.read()).rejects.toThrow("Путь вне");
+  await expect(f.read()).rejects.toThrow("Path is outside");
 });

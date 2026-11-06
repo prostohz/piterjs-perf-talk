@@ -77,8 +77,8 @@ export function RunView({
   ).length;
   const iterations = report.attempts.filter((a) => a.parent !== null).length;
   const duration = report.finishedAt
-    ? `${formatNumber(workingDurationMs(report) / 60000)} мин`
-    : "ещё не завершён";
+    ? `${formatNumber(workingDurationMs(report) / 60000)} min`
+    : "Not finished";
   return (
     <>
       <header className="flex flex-wrap items-start justify-between gap-4">
@@ -94,11 +94,11 @@ export function RunView({
       </header>
       <div className="mt-6 grid grid-cols-[1.3fr_1fr_1fr_0.7fr_1.3fr] gap-6 border-b pb-6">
         {[
-          ["Начало", formatDate(report.startedAt)],
-          ["Длительность", duration],
-          ["Итераций принято", `${accepted} / ${iterations}`],
-          ["Сценариев", names.length],
-          ["Метрика", metric],
+          ["Started", formatDate(report.startedAt)],
+          ["Duration", duration],
+          ["Iterations accepted", `${accepted} / ${iterations}`],
+          ["Scenarios", names.length],
+          ["Metric", metric],
         ].map(([label, value]) => (
           <div key={label} className="min-w-0">
             <span className="mb-1 block text-xs text-muted-foreground">
@@ -110,25 +110,25 @@ export function RunView({
           </div>
         ))}
       </div>
-      <section className="mt-8" aria-label="Динамика cost">
+      <section className="mt-8" aria-label="Cost over time">
         <h3 className="text-center text-base leading-snug font-semibold">
-          Прогресс оптимизации: итераций — {iterations}, принято — {accepted}
+          Optimization progress: {accepted} of {iterations} iterations accepted
         </h3>
         <HistoryChart report={report} attemptId={attempt?.id ?? ""} />
       </section>
       {best && <CodeDiff key={best.id} run={run} attempt={best} cumulative />}
       <section className="mt-8">
         <h3 className="text-lg leading-normal font-semibold">
-          Результат по сценариям
+          Results by scenario
         </h3>
         <div id="overview" className="mt-4">
           <DataTable>
             <ColumnHeadings
               columns={[
-                "Сценарий",
+                "Scenario",
                 `Baseline, ${measurementUnit(metric)}`,
-                `Итог, ${measurementUnit(metric)}`,
-                "Улучшение",
+                `Final, ${measurementUnit(metric)}`,
+                "Improvement",
               ]}
             />
             <TableBody>
@@ -164,12 +164,12 @@ export function RunView({
         </div>
       </section>
       <section className="mt-8">
-        <h3 className="text-lg leading-normal font-semibold">Итерации</h3>
+        <h3 className="text-lg leading-normal font-semibold">Iterations</h3>
         <div className="mt-4 grid grid-cols-[224px_minmax(0,1fr)] gap-8">
           <nav
             ref={attemptsList}
             id="attempts"
-            aria-label="Итерации"
+            aria-label="Iterations"
             className="relative min-h-0 min-w-0 space-y-1 overflow-y-auto border-r p-1 pr-3 [contain:size] [scrollbar-width:thin]"
           >
             {report.attempts.map((a) => (
@@ -186,12 +186,12 @@ export function RunView({
                     {attemptName(a)}
                     {a.id === report.best && (
                       <small className="ml-2 text-xs font-medium text-success">
-                        ИТОГ
+                        BEST
                       </small>
                     )}
                   </strong>
                   <span className="mt-1 mb-2 block truncate text-xs font-normal text-muted-foreground">
-                    {a.hypothesis ?? "Исходная версия"}
+                    {a.hypothesis ?? "Original version"}
                   </span>
                   <StatusBadge status={a.status} />
                 </span>
@@ -206,12 +206,12 @@ export function RunView({
               attempt={attempt}
             />
           ) : (
-            <p className="py-12 text-muted-foreground">Попыток пока нет.</p>
+            <p className="py-12 text-muted-foreground">No attempts yet.</p>
           )}
         </div>
       </section>
       <section className="mt-8">
-        <Disclosure title="Конфигурация и окружение">
+        <Disclosure title="Configuration and environment">
           <RawText>
             {JSON.stringify(
               {
@@ -224,8 +224,8 @@ export function RunView({
             )}
           </RawText>
         </Disclosure>
-        <Disclosure title="События прогона">
-          <RawText>{detail.events || "Событий пока нет."}</RawText>
+        <Disclosure title="Run events">
+          <RawText>{detail.events || "No events yet."}</RawText>
         </Disclosure>
       </section>
     </>

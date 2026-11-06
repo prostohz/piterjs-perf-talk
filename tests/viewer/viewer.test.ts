@@ -106,10 +106,10 @@ it("reads partial history, missing events, and newly written results", async () 
 it("rejects malformed statistics and broken parent links", async () => {
   const f = await fixture();
   f.attempt.measurements.scenario!.operationTimeMs!.median = NaN;
-  expect(() => parseReport(f.report)).toThrow("статистика");
+  expect(() => parseReport(f.report)).toThrow("Invalid statistics field");
   f.attempt.measurements = {};
   f.attempt.parent = "missing";
-  expect(() => parseReport(f.report)).toThrow("история");
+  expect(() => parseReport(f.report)).toThrow("Invalid iteration history");
 });
 
 it("compares against the parent, handles FPS direction and zero references", async () => {

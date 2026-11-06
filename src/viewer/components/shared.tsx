@@ -8,40 +8,41 @@ import { complete, improvement } from "../model.js";
 import { cn } from "../lib/utils.js";
 
 export const formatNumber = (value: number) =>
-  value.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
+  value.toLocaleString("en-US", { maximumFractionDigits: 2 });
 export const measurementUnit = (metric: Metric) =>
   metric === "operationTimeMs" || metric === "reactRenderTimeMs"
-    ? "мкс"
+    ? "µs"
     : metric === "rafFps"
       ? "FPS"
-      : "шт.";
+      : "count";
 export const formatMeasurement = (value: number, metric: Metric) =>
   metric === "operationTimeMs" || metric === "reactRenderTimeMs"
-    ? (value * 1000).toLocaleString("ru-RU", { maximumFractionDigits: 0 })
+    ? (value * 1000).toLocaleString("en-US", { maximumFractionDigits: 0 })
     : formatNumber(value);
 export const formatDate = (value: string) =>
-  new Date(value).toLocaleString("ru-RU", {
-    dateStyle: "short",
+  new Date(value).toLocaleString("en-US", {
+    dateStyle: "medium",
     timeStyle: "short",
+    hourCycle: "h23",
   });
 export const labels: Record<string, string> = {
-  running: "В процессе",
-  completed: "Завершён",
-  accepted: "Принята",
-  rejected: "Отклонена",
-  failed: "Ошибка",
-  interrupted: "Прерван",
-  snapshot: "Копирование",
-  agent: "Работа агента",
-  prepare: "Подготовка",
-  test: "Тесты",
-  measure: "Измерения",
-  done: "Завершено",
+  running: "Running",
+  completed: "Completed",
+  accepted: "Accepted",
+  rejected: "Rejected",
+  failed: "Failed",
+  interrupted: "Interrupted",
+  snapshot: "Creating snapshot",
+  agent: "Agent working",
+  prepare: "Preparing",
+  test: "Testing",
+  measure: "Measuring",
+  done: "Done",
 };
 export const attemptName = (a: Attempt) =>
   a.parent === null
     ? "Baseline"
-    : `Итерация ${Number(a.id.replace("iteration-", "")) || a.id}`;
+    : `Iteration ${Number(a.id.replace("iteration-", "")) || a.id}`;
 
 export function StatusBadge({ status }: { status: string }) {
   return (
@@ -123,7 +124,7 @@ export function Delta({
     return <span className="text-muted-foreground">—</span>;
   const value = improvement(before.median, after.median, metric);
   if (value === null)
-    return <span className="text-muted-foreground">— (ориентир 0)</span>;
+    return <span className="text-muted-foreground">— (reference is zero)</span>;
   return (
     <span
       className={

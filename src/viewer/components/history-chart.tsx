@@ -33,7 +33,7 @@ const chartColors = {
 };
 
 const formatCost = (value: number) =>
-  value.toLocaleString("ru-RU", { maximumSignificantDigits: 6 });
+  value.toLocaleString("en-US", { maximumSignificantDigits: 6 });
 
 function ReferenceLine({
   series,
@@ -139,7 +139,7 @@ function CostTooltip({
       </div>
       {reference !== null && (
         <div className="mt-1 flex justify-between gap-6 text-muted-foreground">
-          <span>Ориентир</span>
+          <span>Reference</span>
           <span>{formatCost(reference)}</span>
         </div>
       )}
@@ -166,7 +166,7 @@ export function HistoryChart({ report, attemptId }: ChartProps) {
   if (!attempts.some((point) => point.y !== null))
     return (
       <div id="cost-plot" className="py-12 text-muted-foreground">
-        Cost ещё не рассчитан.
+        Cost has not been calculated yet.
       </div>
     );
 
@@ -204,19 +204,19 @@ export function HistoryChart({ report, attemptId }: ChartProps) {
       <div className="relative h-[420px]">
         <div
           className="absolute top-8 right-10 z-10 space-y-1 rounded-sm border bg-background/95 px-3 py-2 text-xs"
-          aria-label="Легенда графика"
+          aria-label="Chart legend"
         >
           <div className="flex items-center gap-2">
             <span className="size-1.5 rounded-full bg-chart-rejected" />
-            Отклонена
+            Rejected
           </div>
           <div className="flex items-center gap-2">
             <span className="size-2.5 rounded-full border border-success bg-success" />
-            Принята
+            Accepted
           </div>
           <div className="flex items-center gap-2">
             <span className="w-5 border-t-2 border-success" />
-            Ориентир
+            Reference
           </div>
         </div>
         <ResponsiveLine<CostSeries>
@@ -250,7 +250,7 @@ export function HistoryChart({ report, attemptId }: ChartProps) {
             tickSize: 4,
             tickPadding: 8,
             format: formatNumber,
-            legend: "Итерация",
+            legend: "Iteration",
             legendOffset: 38,
             legendPosition: "middle",
           }}
@@ -323,10 +323,10 @@ export function HistoryChart({ report, attemptId }: ChartProps) {
           }}
           animate={false}
           role="img"
-          ariaLabel="История cost по итерациям"
+          ariaLabel="Cost by iteration"
           isFocusable
           pointAriaLabel={(point) =>
-            `${attemptName(point.data.attempt)}: cost ${point.data.attempt.cost === null || point.data.attempt.cost === undefined ? "не рассчитан" : formatCost(point.data.attempt.cost)} · ${labels[point.data.attempt.status]}`
+            `${attemptName(point.data.attempt)}: cost ${point.data.attempt.cost === null || point.data.attempt.cost === undefined ? "not calculated" : formatCost(point.data.attempt.cost)} · ${labels[point.data.attempt.status]}`
           }
         />
       </div>

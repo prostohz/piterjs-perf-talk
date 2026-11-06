@@ -50,13 +50,13 @@ export function App() {
         );
         setNotice(
           runs.some((run) => run.error)
-            ? "Некоторые отчёты недоступны — выберите их для подробностей."
+            ? "Some reports are unavailable. Select one for details."
             : "",
         );
       })
       .catch((error: unknown) => {
         if (!controller.signal.aborted)
-          setNotice(`Не удалось обновить: ${message(error)}`);
+          setNotice(`Could not load runs: ${message(error)}`);
       })
       .finally(() => {
         if (!controller.signal.aborted) setCatalogBusy(false);
@@ -106,9 +106,9 @@ export function App() {
   return (
     <div className="grid min-h-dvh min-w-6xl grid-cols-[232px_minmax(0,1fr)]">
       <aside className="sticky top-0 h-dvh overflow-y-auto border-r bg-muted px-4 pt-12 pb-6">
-        <h1 className="mb-6 text-base font-semibold">Прогоны</h1>
+        <h1 className="mb-6 text-base font-semibold">Runs</h1>
         <Picker
-          label="Таргет"
+          label="Target"
           id="target"
           value={filter}
           onChange={(event) => {
@@ -119,7 +119,7 @@ export function App() {
               setSelected(catalog.find((run) => run.target === value));
           }}
         >
-          <option value="">Все таргеты</option>
+          <option value="">All targets</option>
           {[...new Set(catalog.map((run) => run.target))].sort().map((name) => (
             <option key={name}>{name}</option>
           ))}
@@ -131,7 +131,7 @@ export function App() {
         >
           {notice}
         </p>
-        <nav id="runs" aria-label="Запуски" className="mt-6 space-y-1 p-1">
+        <nav id="runs" aria-label="Runs" className="mt-6 space-y-1 p-1">
           {visible.map((run) => (
             <Button
               key={runKey(run)}
@@ -152,14 +152,14 @@ export function App() {
                 <StatusBadge status={run.status ?? "failed"} />
                 <small className="text-xs font-normal text-muted-foreground">
                   {run.error
-                    ? "Отчёт недоступен"
-                    : `${run.accepted} / ${run.attempts} принято`}
+                    ? "Report unavailable"
+                    : `${run.accepted} / ${run.attempts} accepted`}
                 </small>
               </span>
             </Button>
           ))}
           {!catalogBusy && !visible.length && (
-            <p className="text-muted-foreground">Запусков пока нет.</p>
+            <p className="text-muted-foreground">No runs yet.</p>
           )}
         </nav>
       </aside>
@@ -171,21 +171,21 @@ export function App() {
       >
         {currentError ? (
           <div className="py-12 text-muted-foreground">
-            <h2 className="mb-3 text-xl font-semibold">Отчёт недоступен</h2>
+            <h2 className="mb-3 text-xl font-semibold">Report unavailable</h2>
             <p className="wrap-anywhere">{currentError}</p>
-            <p>Выберите другой запуск или обновите страницу.</p>
+            <p>Select another run or refresh the page.</p>
           </div>
         ) : detail && selected ? (
           <RunView key={key} detail={detail} run={selected} />
         ) : (
           <p className="py-12 text-muted-foreground">
             {selected
-              ? "Загрузка отчёта…"
+              ? "Loading report…"
               : catalogBusy
-                ? "Читаем историю из runs…"
+                ? "Loading runs…"
                 : notice
-                  ? "Не удалось прочитать каталог. Попробуйте обновить страницу."
-                  : "В папке runs пока нет запусков. После прогона обновите страницу."}
+                  ? "Could not load the run list. Try refreshing the page."
+                  : "No runs in the runs directory yet. Refresh after starting a run."}
           </p>
         )}
       </main>

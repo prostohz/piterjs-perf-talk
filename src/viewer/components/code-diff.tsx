@@ -48,11 +48,11 @@ export function CodeDiff({
       onToggle={(event) => setOpen(event.currentTarget.open)}
     >
       <summary className="min-h-11 py-3 text-sm leading-normal font-medium hover:text-primary">
-        {cumulative ? "Итоговые изменения кода" : "Изменения кода"}
+        {cumulative ? "Cumulative code changes" : "Code changes"}
         {counts && (
           <span
             className="ml-3 inline-flex gap-2 font-mono text-xs"
-            aria-label="Изменения строк"
+            aria-label="Lines changed"
           >
             <span className="text-success">+{counts.added}</span>
             <span className="text-destructive">−{counts.removed}</span>
@@ -66,7 +66,7 @@ export function CodeDiff({
           </p>
           {attempt.status === "running" ? (
             <p className="px-3.5 pb-3 text-xs text-muted-foreground">
-              Дифф будет доступен после завершения итерации.
+              The diff is available once the iteration ends.
             </p>
           ) : error ? (
             <p role="alert" className="px-3.5 pb-3 text-xs text-destructive">
@@ -77,15 +77,15 @@ export function CodeDiff({
               role="status"
               className="px-3.5 pb-3 text-xs text-muted-foreground"
             >
-              Загрузка диффа…
+              Loading diff…
             </p>
           ) : !result.patch ? (
             <p className="px-3.5 pb-3 text-xs text-muted-foreground">
-              Изменений кода нет.
+              No code changes.
             </p>
           ) : (
             <pre
-              aria-label="Дифф кода"
+              aria-label="Code diff"
               className="max-h-[560px] overflow-auto border-t py-2 text-xs leading-5"
             >
               <code className="block min-w-max">

@@ -40,28 +40,28 @@ export function AttemptDetail({
         <StatusBadge status={a.status} />
       </div>
       <p className="mt-2 mb-5 text-xs text-muted-foreground wrap-anywhere">
-        {a.id} · Ориентир: {a.parent ?? "нет — исходное измерение"}
+        {a.id} · Reference: {a.parent ?? "none (baseline)"}
       </p>
       <p className="my-5 text-sm leading-6 whitespace-pre-wrap wrap-anywhere">
         {a.hypothesis?.trimEnd() ??
           (a.parent === null
-            ? "Исходный слепок библиотеки до изменений."
-            : "Гипотеза ещё не сохранена.")}
+            ? "Original library snapshot before any changes."
+            : "No hypothesis recorded yet.")}
       </p>
       {a.cost !== undefined && (
         <p className="my-5 text-sm leading-6">
           Cost:{" "}
           <strong>
             {a.cost === null
-              ? "не определён"
-              : a.cost.toLocaleString("ru-RU", { maximumSignificantDigits: 6 })}
+              ? "undefined"
+              : a.cost.toLocaleString("en-US", { maximumSignificantDigits: 6 })}
           </strong>
           {a.decision?.referenceCost !== undefined && (
             <>
               {" "}
-              · ориентир:{" "}
+              · reference:{" "}
               <strong>
-                {a.decision.referenceCost.toLocaleString("ru-RU", {
+                {a.decision.referenceCost.toLocaleString("en-US", {
                   maximumSignificantDigits: 6,
                 })}
               </strong>
@@ -70,7 +70,7 @@ export function AttemptDetail({
           {a.decision?.improvementPercent != null && (
             <>
               {" "}
-              · улучшение:{" "}
+              · improvement:{" "}
               <strong>{formatNumber(a.decision.improvementPercent)}%</strong>
             </>
           )}
@@ -80,10 +80,10 @@ export function AttemptDetail({
       <DataTable>
         <ColumnHeadings
           columns={[
-            "Сценарий",
-            `Ориентир, ${measurementUnit(metric)}`,
-            `Попытка, ${measurementUnit(metric)}`,
-            "Улучшение",
+            "Scenario",
+            `Reference, ${measurementUnit(metric)}`,
+            `Attempt, ${measurementUnit(metric)}`,
+            "Improvement",
           ]}
         />
         <TableBody>
@@ -117,15 +117,15 @@ export function AttemptDetail({
         </TableBody>
       </DataTable>
       {names.length ? (
-        <Disclosure title="Все замеры, p95 и разброс">
+        <Disclosure title="All samples, p95, and range">
           <DataTable className="min-w-[44rem] [&_th:first-child]:w-[26%] [&_th:nth-child(2)]:w-[12%] [&_th:nth-child(3)]:w-[20%] [&_th:nth-child(4)]:w-[12%]">
             <ColumnHeadings
               columns={[
-                "Сценарий",
+                "Scenario",
                 `p95, ${measurementUnit(metric)}`,
                 `min … max, ${measurementUnit(metric)}`,
-                `Разброс, ${measurementUnit(metric)}`,
-                `Серия, ${measurementUnit(metric)}`,
+                `Range, ${measurementUnit(metric)}`,
+                `Samples, ${measurementUnit(metric)}`,
               ]}
             />
             <TableBody>
@@ -159,12 +159,10 @@ export function AttemptDetail({
           </DataTable>
         </Disclosure>
       ) : (
-        <p className="text-muted-foreground">Замеры ещё не сохранены.</p>
+        <p className="text-muted-foreground">No measurements recorded yet.</p>
       )}
       {a.errors.length > 0 && (
-        <Disclosure
-          title={`Ошибки и исправления в ходе попытки (${a.errors.length})`}
-        >
+        <Disclosure title={`Attempt errors and fixes (${a.errors.length})`}>
           <RawText>{a.errors.join("\n\n")}</RawText>
         </Disclosure>
       )}

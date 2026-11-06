@@ -1,109 +1,107 @@
-# Устройство экспериментального пайплайна
+# Experimental optimization pipeline
 
-## Агент
+## Agent
 
-Пайплайн использует Codex через `codex app-server`. Интеграция отделена интерфейсом `CodingAgent`; в фабрике агентов реализован только провайдер `codex`.
+The pipeline uses Codex through `codex app-server`. The `CodingAgent` interface separates the agent integration from the pipeline. The agent factory supports only the `codex` provider.
 
-Промпт запрещает агенту изменять, удалять или отключать существующие тесты библиотеки, в том числе исключать их из запуска. Перед проверкой кандидата пайплайн контролирует изменения защищённых файлов.
+The prompt prohibits the agent from modifying, deleting, disabling, or excluding existing library tests from a test run. Before verifying a candidate, the pipeline checks for changes to protected files. Dependencies, package manifests, and lockfiles are also protected.
 
-Зависимости, манифесты пакетов и lock-файлы также защищены от изменений.
+## Measurements
 
-## Измерения
+- The pipeline runs each scenario `measurements.repeats` times under conditions defined by the target harness.
+- `measurements.workers` sets the number of parallel measurement workers and defaults to 1. A worker runs all repetitions of one scenario in order, then takes the next scenario from the queue. SVGEdit gives each worker its own Chromium instance and server and creates a fresh browser context for each repetition.
+- The baseline and all candidates use the same saved worker count. Preparation, tests, and iterations run sequentially; only scenarios within one evaluation run in parallel. Worker assignments are logged in `events.jsonl`, and results are written sequentially. On error, no new measurements start, active workers are closed, and results already saved remain in the report.
+- The SVGEdit harness runs each repetition in a clean browser context with the HTTP cache disabled and no separate warm-up for the operation.
+- For the metric selected in `targetMetric`, the pipeline stores the raw samples, median, p95, minimum, maximum, and range for each scenario.
+- The baseline is the initial set of measurements for each scenario.
 
-- Пайплайн измеряет каждый сценарий с числом повторов из `measurements.repeats`; условия задаёт обвязка target.
-- `measurements.workers` задаёт число параллельных измерителей, по умолчанию 1. Каждый воркер выполняет все повторы одного сценария последовательно, затем берёт следующий из очереди. SVGEdit создаёт отдельный Chromium и сервер для каждого воркера; контекст браузера создаётся заново для каждого повтора.
-- Baseline и кандидаты используют одно сохранённое число воркеров. Подготовка, тесты и итерации выполняются последовательно; параллельны только сценарии одной оценки. Назначения сценариев воркерам сохраняются в `events.jsonl`, результаты записываются последовательно. При ошибке новые замеры не запускаются, активные воркеры закрываются, уже сохранённые результаты остаются в отчёте.
-- Обвязка SVGEdit выполняет каждый повтор без отдельного прогрева операции, в новом контексте браузера с чистым состоянием и отключённым HTTP-кэшем.
-- Пайплайн сохраняет только выбранную в `targetMetric` метрику: серию замеров, медиану, p95, минимум, максимум и разброс для каждого сценария.
-- Первое измерение — исходная серия замеров для каждого сценария — называется baseline.
+## Metrics
 
-## Метрики
-
-Определения, ключи и направления улучшения метрик — в [docs/metrics.md](metrics.md).
+See [docs/metrics.md](metrics.md) for metric keys, definitions, and which direction counts as an improvement.
 
 ## Targets
 
-Структура target и контракт `target.ts` описаны в [docs/targets.md](targets.md).
+See [docs/targets.md](targets.md) for the target layout and the `target.ts` contract.
 
-## Пайплайн
+## Pipeline
 
-Новый прогон начинается с первого этапа. Остановленный прогон можно продолжить с дополнительным бюджетом.
+A new run starts at step 1. You can resume a stopped run with an additional budget.
 
-Целевую метрику и порог принятия пайплайн берёт из общего `config.ts`. Цель оптимизации — минимизировать общий cost по фиксированному набору сценариев.
+The pipeline reads the target metric and acceptance threshold from the shared `config.ts`. The goal is to minimize overall cost across a fixed set of scenarios.
 
-### Слепки библиотеки
+### Library snapshots
 
-Слепок библиотеки — отдельная копия её исходников, тестов и файлов сборки и зависимостей для проверки конкретной версии. Пайплайн создаёт и хранит слепки в `runs/<target>/<run-id>/`: для baseline — из `targets/<target>/library/`, для каждой итерации — из последнего принятого слепка, а если его ещё нет — из baseline.
+A library snapshot is a separate copy of its source code, tests, and build and dependency files used to verify a specific version. The pipeline creates and stores snapshots in `runs/<target>/<run-id>/`. It copies the baseline from `targets/<target>/library/` and each iteration from the last accepted snapshot, falling back to the baseline until it accepts a change.
 
-Агент вносит изменения в копию текущей итерации. Пайплайн передаёт путь к ней в `target.prepare`. Установленные зависимости и результаты сборки готовятся заново; `harness/` в слепок не входит. После завершения итерации её слепок сохраняется без дальнейших изменений.
+The agent edits the current iteration's copy. The pipeline passes its path to `target.prepare`. Dependencies are installed and build artifacts are produced afresh. The `harness/` directory is outside the snapshot. Once an iteration ends, its snapshot is preserved as is.
 
-### Бюджеты
+### Budgets
 
-- Ограничения по общему времени работы и числу итераций настраиваются.
-- Бюджет времени учитывает весь прогон, включая начальную подготовку, оценку baseline и все этапы итераций.
-- Одна итерация — выполнение этапов 2–4 для одной гипотезы.
-- Пайплайн останавливается при достижении любого из лимитов.
-- При исчерпании времени текущая работа прерывается, незавершённая итерация не принимается.
+- Total runtime and iteration limits are configurable.
+- The time budget covers the entire run, including initial preparation, baseline evaluation, and every iteration stage.
+- One iteration runs steps 2–4 for one hypothesis.
+- The pipeline stops when it reaches either limit.
+- If the time budget runs out, the pipeline interrupts the work in progress and does not accept an unfinished iteration.
 
-### Продление прогона
+### Resuming a run
 
-- Продление продолжает тот же прогон в `runs/<target>/<run-id>/`: один baseline, один отчёт и общая история без объединения отдельных прогонов.
-- Продолжать можно только прогон с успешно завершённым baseline. Исходные значения baseline для нормализации cost сохраняются и повторно не измеряются.
-- Новая итерация начинается с последнего принятого слепка, а если принятых изменений нет — с baseline. Агент получает всю предыдущую историю.
-- Нумерация продолжается: после 10 итераций продление ещё на 10 даёт итерации 11–20. Незавершённая попытка сохраняет свой номер, данные и статус; вместо её возобновления начинается новая.
-- При продлении задаются дополнительное время работы и число новых итераций. Остановка — по первому достигнутому лимиту. Подготовка продолжения входит в бюджет, время простоя между запусками — нет.
-- Продление использует сохранённые настройки прогона, а не текущий `config.ts`. Проверяются отпечатки target и обвязки, версия агента, исходный коммит библиотеки, набор сценариев и сохранённые слепки baseline и лучшей версии. Прогоны без cost не продлеваются.
-- Окружение сравнивается строго: версии Node.js и его компонентов, ОС, архитектура, модели CPU, объём памяти, часовой пояс, локаль, `NODE_OPTIONS` и абсолютный путь проекта. Несовпадение блокирует продление.
-- В отчёте сохраняются периоды работы и добавленные бюджеты. Каталог `.run-lock` блокирует одновременную работу нескольких процессов с одним прогоном.
+- Resuming continues the same run in `runs/<target>/<run-id>/` with one baseline, one report, and a shared history. It does not merge separate runs.
+- Only runs with a completed baseline can be resumed. The original baseline values used to normalize cost are retained without remeasurement.
+- A new iteration starts from the last accepted snapshot, or from the baseline if there are no accepted changes. The agent receives the full history.
+- Iteration numbering continues. For example, resuming a run after 10 iterations with a budget for 10 more yields iterations 11–20. An unfinished attempt keeps its number, data, and status. The pipeline starts a new iteration instead of restarting that attempt.
+- To resume, specify the additional runtime and number of new iterations. The run stops at whichever limit it reaches first. Preparation counts against the time budget; idle time between sessions does not.
+- Resuming uses the saved run settings. It checks target and harness fingerprints, agent version, the library's source commit, the scenario set, and the saved baseline and best snapshots. A run without a cost value cannot be resumed.
+- The environment must match exactly: Node.js and component versions, OS, architecture, CPU models, memory, time zone, locale, `NODE_OPTIONS`, and the absolute project path. A mismatch blocks resumption.
+- The report records work periods and additional budgets. The `.run-lock` directory prevents multiple processes from working on the same run concurrently.
 
-Прогоны с обезличенными путями или изменёнными отпечатками target доступны для просмотра, но проверки совместимости не позволяют продолжать их командой `resume`.
+You can view runs with anonymized paths or changed target fingerprints, but compatibility checks prevent `resume` from continuing them.
 
-### История итераций
+### Iteration history
 
-В отчёте сохраняется окружение запуска. Все слепки одного прогона измеряются одной обвязкой с сохранёнными настройками.
+The report records the runtime environment. All snapshots in a run are measured with the same harness and saved settings.
 
-История содержит baseline и все начатые итерации, включая неуспешные и прерванные. Для завершённой оценки сохраняются гипотеза, слепок кода, замеры, cost кандидата и ориентира, процент улучшения и решение с причинами. При сбое или прерывании сохраняются доступные данные, статус и причина остановки; гипотеза, cost и полный набор замеров могут отсутствовать.
+The history includes the baseline and all started iterations, including failed and interrupted attempts. For a completed evaluation, it stores the hypothesis, code snapshot, measurements, candidate and reference costs, percentage improvement, and decision with its rationale. On failure or interruption, it stores the available data, status, and reason for stopping. The hypothesis, cost, or complete set of measurements may be missing.
 
 ### Cost
 
-Cost — среднее нормализованных медиан целевой метрики по всем сценариям:
+Cost is the average of the normalized medians of the target metric across all scenarios:
 
-- Для метрики «меньше — лучше»: `cost = mean(candidateMedian / baselineMedian)`.
-- Для метрики «больше — лучше»: `cost = mean(baselineMedian / candidateMedian)`.
+- For a metric where lower is better: `cost = mean(candidateMedian / baselineMedian)`.
+- For a metric where higher is better: `cost = mean(baselineMedian / candidateMedian)`.
 
-Все сценарии имеют одинаковый вес. Набор сценариев и исходный baseline фиксируются на весь прогон, включая продления. Cost baseline равен 1; меньше — лучше. Неположительная медиана baseline завершает прогон ошибкой; кандидат с неопределённым или бесконечным cost отклоняется.
+All scenarios have equal weight. The scenario set and the original baseline stay fixed for the entire run, including when the run resumes. Baseline cost is 1; lower is better. A nonpositive baseline median stops the run with an error. The pipeline rejects candidates with undefined or infinite cost.
 
-В коде и отчётах используются `cost` и `referenceCost`. В докладе cost называется «целевая функция».
+The code and reports use `cost` and `referenceCost`. The talk refers to cost as the objective function.
 
-Улучшение: `100 × (referenceCost − candidateCost) / referenceCost`, где ориентир — последний принятый вариант или baseline. При нулевом cost ориентира дальнейшее улучшение невозможно.
+Improvement is `100 × (referenceCost − candidateCost) / referenceCost`. The reference is the last accepted version, or the baseline if none has been accepted. If the reference cost is zero, no further improvement is possible.
 
-Регрессии отдельных сценариев допустимы. Другие метрики не измеряются и не сохраняются; `constraintMetrics` не используется.
+Individual scenarios may regress. The pipeline does not measure or store other metrics, and it does not use `constraintMetrics`.
 
-### Алгоритм
+### Algorithm
 
-#### 1. Оценка baseline
+#### 1. Evaluate the baseline
 
-Пайплайн копирует файлы исходной библиотеки, отслеживаемые Git, подготавливает слепок, запускает его тесты и измеряет все выбранные сценарии. Слепок и результаты сохраняются как исходный ориентир — baseline.
+The pipeline copies the files Git tracks in the original library, prepares the snapshot, runs its tests, and measures all selected scenarios. It saves the snapshot and results as the baseline.
 
-#### 2. Формирование гипотезы и внесение изменений
+#### 2. Propose a hypothesis and make changes
 
-Пайплайн создаёт копию последнего принятого слепка, а до первого улучшения — baseline. Агент выбирает одну гипотезу, вносит изменения в эту копию и возвращает описание изменения и ожидаемого эффекта в JSON.
+The pipeline copies the last accepted snapshot, or the baseline before the first improvement. The agent picks one hypothesis, edits that copy, and returns a JSON description of the change and its expected effect.
 
-Перед завершением агент вызывает `verify_library`: инструмент подготавливает слепок и запускает все тесты библиотеки. Ошибки подготовки и тестов возвращаются агенту для исправления той же гипотезы в той же сессии. Пайплайн переходит к замерам только после успешной проверки финальных исходников; изменение кода после проверки делает её результат недействительным.
+Before finishing, the agent calls `verify_library`, which prepares the snapshot and runs all library tests. Preparation and test failures are reported back to the agent so it can fix the same hypothesis in the same session. The pipeline starts measuring only after the final source code passes verification. Changing the code after verification invalidates the result.
 
-#### 3. Оценка гипотезы
+#### 3. Evaluate the hypothesis
 
-Пайплайн повторно подготавливает проверенный слепок для измерений. При сбое агента, ошибке измерения или некорректном результате сценария весь прогон завершается без повторной попытки. Причина ошибки и доступные результаты сохраняются, текущая итерация не принимается. Ошибка оценки baseline также останавливает прогон.
+The pipeline prepares the verified snapshot again for benchmarking. An agent failure, measurement error, or invalid scenario result ends the entire run without a retry. The pipeline saves the reason and available results and does not accept the current iteration. An error during baseline evaluation also stops the run.
 
-Пайплайн измеряет кандидата во всех сценариях с числом повторов из `measurements.repeats` и вычисляет cost. Кандидат принимается, если проверки пройдены и улучшение относительно последнего принятого варианта не меньше `minImprovementPercent`. Иначе кандидат отклоняется. Порог применяется к общему cost.
+The pipeline measures the candidate across all scenarios, with `measurements.repeats` repetitions, and calculates cost. It accepts the candidate if all checks pass and the improvement over the last accepted version meets `minImprovementPercent`. Otherwise, it rejects the candidate. The threshold applies to overall cost.
 
-#### 4. Обновление ориентира
+#### 4. Update the reference
 
-Принятый слепок и его замеры становятся новым ориентиром. При отклонении сохраняется прежний ориентир. Исходный baseline для нормализации остаётся неизменным. Следующая итерация начинается с этапа 2.
+An accepted snapshot and its measurements become the new reference. If the candidate is rejected, the previous reference remains in place. The original baseline used for normalization stays fixed. The next iteration starts at step 2.
 
-## Конфигурация
+## Configuration
 
-Общие для всех targets настройки агента, метрики, измерений и бюджетов хранятся в `config.ts` в корне проекта. Текущие значения:
+The root `config.ts` file contains the agent, metric, measurement, and budget settings shared by all targets. The current settings are:
 
 ```ts
 export default {
@@ -125,17 +123,17 @@ export default {
 };
 ```
 
-Ключи метрик перечислены в [docs/metrics.md](metrics.md).
+Metric keys are listed in [docs/metrics.md](metrics.md).
 
-## Запуск
+## Running the pipeline
 
-Для запуска нужны зависимости проекта (`npm i`), установленный и авторизованный Codex CLI и отдельный Git-репозиторий в `targets/<target>/library/` на коммите из `source.json`. Библиотека клонируется заранее. Обвязка устанавливает зависимости и Chromium при подготовке слепка. Для SVGEdit нужен Node.js 26+.
+Install project dependencies with `npm i`, install and sign in to the Codex CLI, and clone the library as a separate Git repository under `targets/<target>/library/`. Check out the commit specified in `source.json`. The harness installs dependencies and Chromium when it prepares a snapshot. SVGEdit requires Node.js 26 or later.
 
-Пайплайн запускается из корня проекта через npm script: `npm run pipeline -- <target>`. Команда обращается к `targets/<target>/`, читает общий `config.ts` и запускает автономный цикл улучшения производительности по алгоритму пайплайна.
+Run `npm run pipeline -- <target>` from the repository root. The command loads the target from `targets/<target>/`, reads the shared `config.ts`, and starts the autonomous optimization loop.
 
-Команда продления: `npm run pipeline -- resume <target>/<run-id> --minutes 60 --iterations 10`. Она продолжает указанный прогон с его сохранёнными настройками ещё на 60 минут работы и максимум 10 новых итераций.
+To resume a run with its saved settings for up to 60 more minutes and 10 new iterations, run `npm run pipeline -- resume <target>/<run-id> --minutes 60 --iterations 10`.
 
-## Структура проекта
+## Repository layout
 
 ```text
 config.ts
@@ -148,21 +146,21 @@ runs/
 docs/
 ```
 
-## Структура результатов
+## Run output
 
-Каждый новый прогон создаёт `runs/<target>/<run-id>/`; продление дополняет ту же директорию:
+Each new run creates `runs/<target>/<run-id>/`. Resuming a run adds to the same directory:
 
-- `report.json` — окружение, конфигурация, периоды работы и бюджеты, baseline, все итерации, серии замеров, статистика, cost и решения; `best` указывает на последний принятый слепок.
-- `events.jsonl`, `worker.log` — этапы и вывод процессов target.
-- `baseline/library/`, `iteration-NNN/library/` — исходники проверенных версий.
-- `iteration-NNN/agent/` — запрос, команда, события и итоговый ответ одной сессии агента, включая сборку, тесты и исправления ошибок.
+- `report.json` — environment, configuration, work periods and budgets, baseline, all iterations, samples, statistics, costs, and decisions. `best` points to the last accepted snapshot.
+- `events.jsonl`, `worker.log` — pipeline stages and target process output.
+- `baseline/library/`, `iteration-NNN/library/` — source code for the evaluated versions.
+- `iteration-NNN/agent/` — prompt, command, events, and final response for one agent session, including builds, tests, and fixes.
 
-Логи, сессии агента и временные файлы исключены через `.gitignore`.
+Git ignores logs, agent sessions, and temporary files.
 
 ## Viewer
 
-Viewer реализован на React, Tailwind CSS и shadcn/ui. `npm run viewer` запускает Vite dev server на `http://127.0.0.1:4173`; другой порт: `npm run viewer -- 4174`.
-Viewer читает `runs/<target>/<run-id>/report.json`.
-Длительности сценариев отображаются в микросекундах; в отчётах значения `operationTimeMs` и `reactRenderTimeMs` хранятся в миллисекундах.
-Для завершённой гипотезы показывает дифф её слепка библиотеки относительно `parent`. Дифф загружается при раскрытии блока «Изменения кода».
-Блок «Итоговые изменения кода» сравнивает последний принятый слепок (`best`) с baseline и показывает число добавленных и удалённых строк. Отклонённые попытки в итоговый diff не входят.
+The Viewer uses React, Tailwind CSS, and shadcn/ui. Run `npm run viewer` to start the Vite dev server at `http://127.0.0.1:4173`. To use a different port, run `npm run viewer -- 4174`.
+
+The Viewer reads `runs/<target>/<run-id>/report.json`. It displays scenario timings in microseconds; reports store `operationTimeMs` and `reactRenderTimeMs` in milliseconds.
+
+For a completed iteration, expand **Code changes** to load the diff between its library snapshot and its `parent`. **Cumulative code changes** compares the last accepted snapshot (`best`) with the baseline and shows the number of lines added and removed. It excludes rejected attempts.

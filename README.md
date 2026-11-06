@@ -1,35 +1,37 @@
-# Ускоряем интерфейс с кодовым агентом
+# Improving UI performance with a coding agent
 
-Материалы доклада для PiterJS и экспериментальный пайплайн автономной оптимизации JavaScript-библиотек. На примере SVGEdit исследуем, как кодовый агент ищет улучшения и проверяет их тестами и браузерными замерами.
+This repository contains the materials for a PiterJS talk and an experimental pipeline for autonomously optimizing JavaScript libraries. Using SVGEdit, we explore how a coding agent finds improvements and validates them with tests and browser benchmarks.
 
-Оптимизации из эксперимента отправлены в SVGEdit: [PR #1111](https://github.com/SVG-Edit/svgedit/pull/1111). Автоматическое ревью Sourcery прошло без замечаний — [Approved](https://github.com/SVG-Edit/svgedit/pull/1111#pullrequestreview-5618147277).
+[PiterJS talk slides (PDF, in Russian)](presentation/build/deck.pdf)
 
-## Как это работает
+The optimizations from the experiment were submitted to SVGEdit in [PR #1111](https://github.com/SVG-Edit/svgedit/pull/1111). Sourcery's automated review [approved the PR without findings](https://github.com/SVG-Edit/svgedit/pull/1111#pullrequestreview-5618147277).
 
-1. Пайплайн измеряет исходную версию библиотеки — baseline.
-2. Агент формулирует гипотезу и изменяет отдельную копию исходников.
-3. Пайплайн запускает тесты и измеряет производительность на фиксированных сценариях.
-4. Если тесты проходят, результаты корректны и улучшение достигает заданного порога, изменения принимаются. Иначе сохраняется предыдущий вариант.
+## How it works
 
-Цикл повторяется до исчерпания бюджета времени или итераций. Гипотезы, изменения кода, замеры и решения сохраняются в `runs/` и доступны в Viewer.
+1. The pipeline measures the original version of the library to establish a baseline.
+2. The agent proposes a hypothesis and changes a separate copy of the source code.
+3. The pipeline runs the tests and measures performance across a fixed set of scenarios.
+4. If the tests pass, the results are valid, and the improvement meets the configured threshold, the pipeline accepts the changes. Otherwise, it keeps the previous version.
+
+The cycle repeats until it reaches the time or iteration limit. Hypotheses, code changes, measurements, and decisions are saved in `runs/` and can be inspected in the Viewer.
 
 ## Viewer
 
-Веб-интерфейс для просмотра прогонов из `runs/`: график cost, замеры по сценариям, гипотезы, решения и диффы кода по итерациям.
+The Viewer shows runs from `runs/`, including the cost chart, per-scenario measurements, hypotheses, decisions, and code diffs for each iteration.
 
 ```sh
 npm i
 npm run viewer
 ```
 
-Открыть [localhost:4173](http://localhost:4173). Другой порт можно задать командой `npm run viewer -- 4174`.
+Open [localhost:4173](http://localhost:4173). To use a different port, run `npm run viewer -- 4174`.
 
-## Содержимое проекта
+## Repository layout
 
-- [config.ts](config.ts) — настройки агента, целевая метрика, число замеров, бюджеты и порог принятия изменений.
-- [docs/](docs/) — устройство пайплайна, метрики и требования к подключению библиотек.
-- [src/](src/) — код пайплайна, интеграция с агентом и веб-интерфейс просмотра результатов.
-- [tests/](tests/) — тесты пайплайна, CLI, интеграции с агентом и Viewer. Запуск: `npm test`.
-- [targets/](targets/) — библиотеки для оптимизации: исходники, сценарии и обвязка для проверки и измерений.
-- [runs/](runs/) — результаты прогонов: гипотезы, слепки кода, замеры и решения по итерациям.
-- [presentation/](https://github.com/prostohz/piterjs-perf-talk/blob/main/presentation) — доклад в html и pdf.
+- [config.ts](config.ts) — agent settings, target metric, measurement count, budgets, and acceptance threshold.
+- [docs/](docs/) — pipeline design, metrics, and requirements for adding a library.
+- [src/](src/) — pipeline, agent integration, and Viewer.
+- [tests/](tests/) — tests for the pipeline, CLI, agent integration, and Viewer. Run them with `npm test`.
+- [targets/](targets/) — libraries to optimize, with source code, scenarios, and harnesses for testing and benchmarking.
+- [runs/](runs/) — run results: hypotheses, code snapshots, measurements, and decisions for each iteration.
+- [presentation/](presentation/) — talk slides in HTML and PDF.

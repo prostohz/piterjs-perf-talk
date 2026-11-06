@@ -23,7 +23,7 @@ export function createViewerApi(runsRoot: string) {
     };
     try {
       if (request.method !== "GET") {
-        send(405, { error: "Только GET" });
+        send(405, { error: "Only GET is supported" });
         return;
       }
       if (url.pathname === "/api/runs") {
@@ -38,12 +38,12 @@ export function createViewerApi(runsRoot: string) {
         const target = url.searchParams.get("target");
         const run = url.searchParams.get("run");
         if (!target || !run) {
-          send(400, { error: "Укажите target и run" });
+          send(400, { error: "Specify target and run" });
           return;
         }
         const attempt = url.searchParams.get("attempt");
         if (url.pathname === "/api/diff" && !attempt) {
-          send(400, { error: "Укажите attempt" });
+          send(400, { error: "Specify attempt" });
           return;
         }
         try {
@@ -62,7 +62,7 @@ export function createViewerApi(runsRoot: string) {
         }
         return;
       }
-      send(404, { error: "Не найдено" });
+      send(404, { error: "Not found" });
     } catch (error) {
       send(500, {
         error: error instanceof Error ? error.message : String(error),

@@ -42,7 +42,9 @@ it("keeps reading duration from dates in legacy reports", () => {
 
 it("rejects malformed periods before rendering", () => {
   const report = createReport("fixture", settings(), new Date(), {});
-  expect(() => parseReport({ ...report, periods: {} })).toThrow("периоды");
+  expect(() => parseReport({ ...report, periods: {} })).toThrow(
+    "Invalid work periods",
+  );
   report.periods![0]!.finishedAt = "not a date";
-  expect(() => parseReport(report)).toThrow("период");
+  expect(() => parseReport(report)).toThrow("Invalid work period");
 });

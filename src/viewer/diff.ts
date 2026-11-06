@@ -15,10 +15,10 @@ export async function readAttemptDiff(
 ): Promise<AttemptDiff> {
   const { report } = await readRun(root, target, run);
   const attempt = report.attempts.find((item) => item.id === id);
-  if (!attempt) throw new Error("Гипотеза не найдена");
+  if (!attempt) throw new Error("Attempt not found");
   if (attempt.parent === null) return { parent: null, patch: "" };
   if (attempt.status === "running")
-    throw new Error("Дифф будет доступен после завершения итерации");
+    throw new Error("The diff is available once the iteration ends");
   return readSnapshotDiff(root, target, run, attempt.parent, attempt.id);
 }
 
@@ -31,7 +31,7 @@ export async function readRunDiff(
   const baseline = report.attempts.find((attempt) => attempt.parent === null);
   const best = report.attempts.find((attempt) => attempt.id === report.best);
   if (!baseline || !best || best.status !== "accepted")
-    throw new Error("Принятой версии пока нет");
+    throw new Error("No accepted snapshot yet");
   if (baseline.id === best.id) return { parent: baseline.id, patch: "" };
   return readSnapshotDiff(root, target, run, baseline.id, best.id);
 }
@@ -69,7 +69,7 @@ async function readSnapshotDiff(
   } catch (error) {
     const failure = error as { code?: number; stdout?: string };
     if (failure.code !== 1 || typeof failure.stdout !== "string")
-      throw new Error("Не удалось построить дифф слепков", { cause: error });
+      throw new Error("Could not compare snapshots", { cause: error });
     patch = failure.stdout;
   }
   return { parent, patch };
